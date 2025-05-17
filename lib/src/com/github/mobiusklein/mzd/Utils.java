@@ -26,10 +26,10 @@ public class Utils {
 
     static <T> T bufferNext(ByteBuffer buffer, Class<T> tClass, int valueSize) {
         T val;
-        if (tClass == Double.class) {
+        if (tClass == Double.class || tClass == double.class) {
             val = (T)Double.valueOf(buffer.getDouble());
         }
-        else if (tClass == Float.class) {
+        else if (tClass == Float.class || tClass == float.class) {
             val = (T)Float.valueOf(buffer.getFloat());
         }
         else if (valueSize == 1) {
