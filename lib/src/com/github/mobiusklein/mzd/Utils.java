@@ -1,6 +1,7 @@
 package com.github.mobiusklein.mzd;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 
 public class Utils {
     /**
@@ -21,6 +22,26 @@ public class Utils {
             return 8;
         } else {
             return 8; // Default to 8 bytes
+        }
+    }
+
+    static <T> void toBuffer(List<T> data, Class<T> tClass, ByteBuffer buffer) {
+        for (T value : data) {
+            if (value instanceof Byte) {
+                buffer.put((Byte) value);
+            } else if (value instanceof Short) {
+                buffer.putShort((Short) value);
+            } else if (value instanceof Integer) {
+                buffer.putInt((Integer) value);
+            } else if (value instanceof Long) {
+                buffer.putLong((Long) value);
+            } else if (value instanceof Float) {
+                buffer.putFloat((Float) value);
+            } else if (value instanceof Double) {
+                buffer.putDouble((Double) value);
+            } else {
+                throw new RuntimeException("Unsupported value size");
+            }
         }
     }
 

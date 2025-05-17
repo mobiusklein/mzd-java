@@ -11,12 +11,12 @@ public class DictCodec {
      * Dictionary encode the provided data with indices
      */
     static <T extends Comparable<T>, V extends Comparable<V>> byte[] dictEncodeIndices(
-            T[] data, List<T> uniqueValues, Class<T> tClass, Class<V> vClass, Class<?> iClass) {
+            List<T> data, List<T> uniqueValues, Class<T> tClass, Class<V> vClass, Class<?> iClass) {
 
         int sizeOfV = Utils.getSizeOfType(vClass);
         int sizeOfI = Utils.getSizeOfType(iClass);
 
-        int zData = sizeOfI * data.length;
+        int zData = sizeOfI * data.size();
         int zVals = uniqueValues.size();
         int zOffset = 8; // Size of long in bytes
 
@@ -62,13 +62,13 @@ public class DictCodec {
         for (T value : data) {
             Object idxView = bytecodeMap.get(value);
 
-            if (iClass == Byte.class) {
+            if (iClass == Byte.class || iClass == byte.class) {
                 buffer.put((Byte)idxView);
-            } else if (iClass == Short.class) {
+            } else if (iClass == Short.class || iClass == short.class) {
                 buffer.putShort((Short) idxView);
-            } else if (iClass == Integer.class) {
+            } else if (iClass == Integer.class || iClass == int.class) {
                 buffer.putInt((Integer) idxView);
-            } else if (iClass == Long.class) {
+            } else if (iClass == Long.class || iClass == long.class) {
                 buffer.putLong((Long) idxView);
             }
         }
@@ -81,7 +81,7 @@ public class DictCodec {
      * values
      */
     static <T extends Comparable<T>, V extends Comparable<V>> byte[] dictEncodeValues(
-            T[] data, List<T> uniqueValues, Class<T> tClass, Class<V> vClass) {
+            List<T> data, List<T> uniqueValues, Class<T> tClass, Class<V> vClass) {
 
         if (uniqueValues.size() < Math.pow(2, 8)) {
             return dictEncodeIndices(data, uniqueValues, tClass, vClass, Byte.class);
@@ -99,11 +99,11 @@ public class DictCodec {
     /**
      * Dictionary encode the provided data
      */
-    public static <T extends Comparable<T>> byte[] dictEncode(T[] data, Class<T> tClass) {
+    public static <T extends Comparable<T>> byte[] dictEncode(List<T> data, Class<T> tClass) {
         int sizeT = Utils.getSizeOfType(tClass);
 
         // Create sorted list of unique values
-        Set<T> uniqueValuesSet = new HashSet<>(Arrays.asList(data));
+        Set<T> uniqueValuesSet = new HashSet<>(data);
         List<T> uniqValues = new ArrayList<>(uniqueValuesSet);
         Collections.sort(uniqValues);
 

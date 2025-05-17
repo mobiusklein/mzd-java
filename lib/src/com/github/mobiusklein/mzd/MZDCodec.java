@@ -1,5 +1,7 @@
 package com.github.mobiusklein.mzd;
 
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
@@ -14,17 +16,17 @@ public class MZDCodec {
     /**
      * Transpose bytes of data
      */
-    private static <T> byte[] transposeBytes(T[] data, Class<T> tClass) {
+    private static <T> byte[] transposeBytes(List<T> data, Class<T> tClass) {
         int sizeT = Utils.getSizeOfType(tClass);
-        int bytesOfData = sizeT * data.length;
+        int bytesOfData = sizeT * data.size();
         byte[] buffer = new byte[bytesOfData];
 
         int offset = 0;
         for (int i = 0; i < sizeT; i++) {
-            for (int j = 0; j < data.length; j++) {
+            for (int j = 0; j < data.size(); j++) {
                 byte value;
 
-                T num = data[j];
+                T num = data.get(j);
                 ByteBuffer byteBuffer = ByteBuffer.allocate(sizeT).order(ByteOrder.LITTLE_ENDIAN);
 
                 if (tClass == Byte.class || tClass == byte.class) {
@@ -210,25 +212,20 @@ public class MZDCodec {
     /**
      * Apply compression to a data buffer
      */
+    public static <T> byte[] compress(List<T> data, Class<T> tClass) {
+        byte[] byteData = new byte[data.size() * Utils.getSizeOfType(tClass)];
+        ByteBuffer buffer = ByteBuffer.wrap(byteData).order(ByteOrder.LITTLE_ENDIAN);
+        Utils.toBuffer(data, tClass, buffer);
+        return Zstd.compress(byteData);
+    }
+
+    /**
+     * Apply compression to a data buffer
+     */
     public static <T> byte[] compress(T[] data, Class<T> tClass) {
         byte[] byteData = new byte[data.length * Utils.getSizeOfType(tClass)];
         ByteBuffer buffer = ByteBuffer.wrap(byteData).order(ByteOrder.LITTLE_ENDIAN);
-
-        for (T value : data) {
-            if (value instanceof Byte) {
-                buffer.put((Byte) value);
-            } else if (value instanceof Short) {
-                buffer.putShort((Short) value);
-            } else if (value instanceof Integer) {
-                buffer.putInt((Integer) value);
-            } else if (value instanceof Long) {
-                buffer.putLong((Long) value);
-            } else if (value instanceof Float) {
-                buffer.putFloat((Float) value);
-            } else if (value instanceof Double) {
-                buffer.putDouble((Double) value);
-            }
-        }
+        Utils.toBuffer(Arrays.asList(data), tClass, buffer);
         return Zstd.compress(byteData);
     }
 
@@ -255,6 +252,14 @@ public class MZDCodec {
      * Apply byte shuffling and compression
      */
     public static <T> byte[] byteShuffleCompress(T[] data, Class<T> tClass) {
+        byte[] buffer = transposeBytes(Arrays.asList(data), tClass);
+        return Zstd.compress(buffer);
+    }
+
+    /**
+     * Apply byte shuffling and compression
+     */
+    public static <T> byte[] byteShuffleCompress(List<T> data, Class<T> tClass) {
         byte[] buffer = transposeBytes(data, tClass);
         return Zstd.compress(buffer);
     }
@@ -271,8 +276,17 @@ public class MZDCodec {
     /**
      * Apply dictionary encoding and compression
      */
-    public static <T extends Comparable<T>> byte[] dictionaryCompress(T[] data, Class<T> tClass) {
+    public static <T extends Comparable<T>> byte[] dictionaryCompress(List<T> data, Class<T> tClass) {
         byte[] buffer = DictCodec.dictEncode(data, tClass);
+
+        return Zstd.compress(buffer);
+    }
+
+    /**
+     * Apply dictionary encoding and compression
+     */
+    public static <T extends Comparable<T>> byte[] dictionaryCompress(T[] data, Class<T> tClass) {
+        byte[] buffer = DictCodec.dictEncode(Arrays.asList(data), tClass);
 
         return Zstd.compress(buffer);
     }
